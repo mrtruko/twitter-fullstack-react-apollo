@@ -28,18 +28,31 @@ const main = async () => {
 
     app.use(
         session({
-            store: new RedisStore({client: redisClient}),
-            secret: '',
+            name:'qid',
+            store: new RedisStore(
+                {
+                    client: redisClient,
+                    disableTouch: true
+                }),
+            cookie: {
+                maxAge: 1000 * 60 * 60 * 24 * 365 * 10,
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: false
+            },
+            secret: 'erherherhrthrthhehre',
+            saveUninitialized: false,
             resave: false
         })
     );
+    redisClient.on('error', console.error)
 
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
             resolvers: [HelloResolver, PostResolver, UserResolver],
             validate: false
         }),
-        context: () => ({em: orm.em})
+        context: ({req, res}) => ({em: orm.em, req, res})
     })
     apolloServer.applyMiddleware({app})
     app.listen(4000, () => {
